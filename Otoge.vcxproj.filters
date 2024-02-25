@@ -136,6 +136,18 @@
     <Filter Include="Resource Files\engine\font\min">
       <UniqueIdentifier>{1b103960-f11a-4515-b4f1-f59333ce00d9}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Header Files\Player">
+      <UniqueIdentifier>{975d2870-bc63-4aa0-aa40-e1029b4e0a66}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\Player">
+      <UniqueIdentifier>{a3da47f9-e0f4-463d-875a-ab1da008915e}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files\Selector">
+      <UniqueIdentifier>{6f1b4c6b-c7a6-4d33-8de5-0f6a08a28392}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\Selector">
+      <UniqueIdentifier>{64607dd3-ca38-4ec5-925e-ecb76137026a}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Main.cpp">
@@ -144,10 +156,13 @@
     <ClCompile Include="stdafx.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="MPM.cpp">
-      <Filter>Source Files</Filter>
+    <ClCompile Include="Player.cpp">
+      <Filter>Source Files\Player</Filter>
     </ClCompile>
-    <ClCompile Include="Note.cpp">
+    <ClCompile Include="Selector.cpp">
+      <Filter>Source Files\Selector</Filter>
+    </ClCompile>
+    <ClCompile Include="Chart.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
@@ -815,13 +830,16 @@
     <ClInclude Include="stdafx.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="MPM.hpp">
+    <ClInclude Include="Player.hpp">
+      <Filter>Header Files\Player</Filter>
+    </ClInclude>
+    <ClInclude Include="Common.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="Note.hpp">
-      <Filter>Header Files</Filter>
+    <ClInclude Include="Selector.hpp">
+      <Filter>Header Files\Selector</Filter>
     </ClInclude>
-    <ClInclude Include="Settings.hpp">
+    <ClInclude Include="Chart.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
