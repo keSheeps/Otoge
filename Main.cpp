@@ -1,4 +1,4 @@
-﻿# include <Siv3D.hpp> // OpenSiv3D v0.6.11
+﻿# include <Siv3D.hpp> // OpenSiv3D v0.6.14
 
 # include "Settings.hpp"
 using namespace Settings;
@@ -22,8 +22,8 @@ public:
 
 Assets Init();
 Chart Parse(String file);
-void Process(Chart& chart, double nowSec, Audio shot);
-void Draw(Chart chart, double nowSec, Texture texture_tap, Texture texture_tap_shadow);
+void Process(Chart& chart, double nowSec, HashTable<String, Audio> audios);
+void Draw(Chart chart, double nowSec, HashTable<String, Texture> textures);
 
 void Main()
 {
@@ -32,10 +32,8 @@ void Main()
 	assets.audios[U"music"].play();
 	while (System::Update())
 	{
-		Process(assets.chart, assets.audios[U"music"].posSec(), assets.audios[U"shot"]);
-		assets.textures[U"bg"].draw(0, 0);
-		Draw(assets.chart, assets.audios[U"music"].posSec(), assets.textures[U"texture_trace"], assets.textures[U"texture_trace_shadow"]);
-		assets.textures[U"upper"].draw(0, 0);
+		Process(assets.chart, assets.audios[U"music"].posSec(), assets.audios);
+		Draw(assets.chart, assets.audios[U"music"].posSec(), assets.textures);
 	}
 }
 
@@ -51,14 +49,14 @@ Assets Init() {
 	Chart chart = Parse(U"test.cht");
 	Assets assets;
 	assets.chart = chart;
-	assets.textures.emplace(U"bg", Texture( U"otoge-play-stage.png" ));
-	assets.textures.emplace(U"upper", Texture( U"otoge-play-stage-upper.png"));
-	assets.textures.emplace(U"texture_tap", Texture(  U"otoge-play-note-tap.png", TextureDesc::Mipped));
-	assets.textures.emplace(U"texture_tap_shadow", Texture(  U"otoge-play-note-tap-shadow.png", TextureDesc::Mipped));
-	assets.textures.emplace(U"texture_trace", Texture( U"otoge-play-note-trace.png", TextureDesc::Mipped));
-	assets.textures.emplace(U"texture_trace_shadow", Texture( U"otoge-play-note-trace-shadow.png", TextureDesc::Mipped));
+	assets.textures.emplace(U"bg", Texture( U"assets/otoge-play-stage.png" ));
+	assets.textures.emplace(U"upper", Texture( U"assets/otoge-play-stage-upper.png"));
+	assets.textures.emplace(U"texture_tap", Texture(  U"assets/otoge-play-note-tap.png", TextureDesc::Mipped));
+	assets.textures.emplace(U"texture_tap_shadow", Texture(  U"assets/otoge-play-note-tap-shadow.png", TextureDesc::Mipped));
+	assets.textures.emplace(U"texture_trace", Texture( U"assets/otoge-play-note-trace.png", TextureDesc::Mipped));
+	assets.textures.emplace(U"texture_trace_shadow", Texture( U"assets/otoge-play-note-trace-shadow.png", TextureDesc::Mipped));
 	assets.audios.emplace(U"music", Audio( chart.data[U"wav"]));
-	assets.audios.emplace(U"shot", Audio( U"決定ボタンを押す52.wav"));
+	assets.audios.emplace(U"shot", Audio( U"assets/決定ボタンを押す52.wav"));
 	return assets;
 }
 
@@ -93,7 +91,13 @@ Chart Parse(String file) {
 	while (reader.readLine(line)) {
 		if (line[0] == U'/')continue;
 		if (Parse<double>(line.split(U',')[2]) < 1 and 1 < Parse<double>(line.split(U',')[3]))continue;//上下にまたがるノートは無理！(0-1は下1-2は上)
-		Note note(Parse<double>(line.split(U',')[0]), noteType::Tap, Parse<double>(line.split(U',')[2]), Parse<double>(line.split(U',')[3]), mpmCngList);//ノート種別も入れる
+		noteType type=noteType::Unset;
+		if (line.split(U',')[1] == U"Tap") { type = noteType::Tap; }
+		if (line.split(U',')[1] == U"Trace_s") { type = noteType::Trace_s; }
+		if (line.split(U',')[1] == U"Trace_B") { type = noteType::Trace_B; }
+		if (line.split(U',')[1] == U"Swing") { type = noteType::Swing; }
+		if (type == noteType::Unset) { continue; }
+		Note note(Parse<double>(line.split(U',')[0]), type, Parse<double>(line.split(U',')[2]), Parse<double>(line.split(U',')[3]), mpmCngList);//ノート種別も入れる
 		if (data.contains(U"offset")) {
 			note.ApplyOffset(Parse<double>(data[U"offset"]));
 		}
@@ -107,57 +111,72 @@ Chart Parse(String file) {
 	return chart;
 }
 
-Note* getJudgeNote(Array<Note>& notes, double left, double right, double nowSec) {
+//一番近い位置のノートを得る，引数:全てのノート,判定位置[判定左位置,判定右位置],現在時刻,判定幅,判定するノートのタイプ
+Note* getJudgeNote(Array<Note>& notes, double left, double right, double nowSec, double judgeSec, noteType type) {
 	Note* judgeNote = nullptr;
 	for (Note& note : notes) {
 		double noteSec = std::get<0>(note.getPosition());
 		double noteLeft = std::get<1>(note.getPosition());
 		double noteRight = std::get <2> (note.getPosition());
+		if (note.getType() != type) continue;//判定する種類のノートでなかったら×
 		if (note.beaten) continue;//ノートがすでに叩かれていたら×
 		if (! ((left <= noteLeft and noteLeft <= right) or (left <= noteRight and noteRight <= right)
 			or (noteLeft <= left and left <= noteRight) or (noteLeft <= right and right <= noteRight))) continue;//キー判定範囲とノートが重なっていなかったら×
-		if (! (-goodSec <= noteSec - nowSec and noteSec - nowSec <= goodSec) ) continue;//判定時間とノート位置が重なっていなかったら×
+		if (Abs(noteSec - nowSec) > judgeSec) continue;//判定時間とノート位置が重なっていなかったら×
 		if (! (judgeNote == nullptr or noteSec < std::get<0>(judgeNote->getPosition())) ) continue;//一番早いノートでなかったら×
 		judgeNote = &note;//判定するノートを更新
 	}
 	return judgeNote;
 }
 
-Note* getJudgeNote(Array<Note>& notes, double pos, double nowSec) {
+Note* getJudgeNote(Array<Note>& notes, double pos, double nowSec, double judgeSec, noteType type) {
 	Note* judgeNote = nullptr;
 	for (Note& note : notes) {
 		double noteSec = std::get<0>(note.getPosition());
 		double noteLeft = std::get<1>(note.getPosition());
 		double noteRight = std::get <2>(note.getPosition());
+		if (note.getType() != type) continue;//判定する種類のノートでなかったら×
 		if (note.beaten) continue;//ノートがすでに叩かれていたら×
 		if (!(noteLeft <= pos and pos <= noteRight)) continue;//叩いた位置とノートが重なっていなかったら×
-		if (!(-goodSec <= noteSec - nowSec and noteSec - nowSec <= goodSec)) continue;//判定時間とノート位置が重なっていなかったら×
+		if (Abs(noteSec - nowSec) > judgeSec) continue;//判定時間とノート位置が重なっていなかったら×
 		if (!(judgeNote == nullptr or noteSec < std::get<0>(judgeNote->getPosition()))) continue;//一番早いノートでなかったら×
 		judgeNote = &note;//判定するノートを更新
 	}
 	return judgeNote;
 }
 
-void Process(Chart& chart, double nowSec, Audio shot) {
+void Process(Chart& chart, double nowSec, HashTable<String, Audio> audios) {
 	//ノートを処理
 	Array<Note>& notes = chart.notes;
 	Array<Note*> judgeNotes;
 	#ifdef KEYS
-	if (KeyD.down()) {
-		judgeNotes << getJudgeNote(notes, 0, 0.25 - 0.1, nowSec);
+	Array<Input> keysA = { KeyC,KeyV,KeyM,KeyComma,Key3,Key4,Key7,Key8 };
+	for (int i = 0; i < 8; i++){
+		if (keysA[i].down()) {
+			judgeNotes << getJudgeNote(notes, 0.25 * i + 0.1, 0.25 * (i + 1) - 0.1, nowSec, goodSec, noteType::Tap);
+		}
+		if (keysA[i].pressed()) {
+			judgeNotes << getJudgeNote(notes, 0.25 * i + 0.1, 0.25 * (i + 1) - 0.1, nowSec, perfectSec, noteType::Trace_s);
+			judgeNotes << getJudgeNote(notes, 0.25 * i + 0.1, 0.25 * (i + 1) - 0.1, nowSec, perfectSec, noteType::Trace_B);
+		}
 	}
-	if (KeyF.down()) {
-		judgeNotes << getJudgeNote(notes, 0.25 + 0.1, 0.5 - 0.1, nowSec);
-	}
-	if (KeyJ.down()) {
-		judgeNotes << getJudgeNote(notes, 0.5 + 0.1, 0.75 - 0.1, nowSec);
-	}
-	if (KeyK.down()) {
-		judgeNotes << getJudgeNote(notes, 0.75 + 0.1, 1, nowSec);
+	Array<Input> keysB = { KeyD,KeyF,KeyJ,KeyK,KeyE,KeyR,KeyU,KeyI };
+	for (int i = 0; i < 8; i++) {
+		if (keysB[i].down()) {
+			judgeNotes << getJudgeNote(notes, 0.25 * i + 0.1, 0.25 * (i + 1) - 0.1, nowSec, goodSec, noteType::Swing);
+		}
 	}
 	for (Note* judgeNote : judgeNotes) {
 		if (judgeNote != nullptr) {
-			shot.playOneShot();
+			audios[U"shot"].playOneShot();
+			double noteSec = std::get<0>(judgeNote->getPosition());
+			if (Abs(noteSec - nowSec) <= perfectSec) {
+				Print << U"Perfect";
+			} else if (Abs(noteSec - nowSec) <= greatSec) {
+				Print << U"Great";
+			} else if (Abs(noteSec - nowSec) <= goodSec) {
+				Print << U"Good";
+			}
 			judgeNote->beaten = true;
 		}
 	}
@@ -166,9 +185,9 @@ void Process(Chart& chart, double nowSec, Audio shot) {
 	Array<double> poses;
 	//ここでposesを取得(タッチされている座標)
 	for (double pos : poses) {
-		judgeNote = getJudgeNote(notes, pos, nowSec);
+		judgeNote = getJudgeNote(notes, pos, nowSec,goodSec, noteType::Tap);
 		if (judgeNote != nullptr) {
-			shot.playOneShot();
+			audios[U"shot"].playOneShot();
 			judgeNote->beaten = true;
 		}
 	}
@@ -177,7 +196,7 @@ void Process(Chart& chart, double nowSec, Audio shot) {
 	for (Note& note : notes) {
 		double noteSec = std::get<0>(note.getPosition());
 		if (nowSec > noteSec) {
-			if (!note.beaten) shot.playOneShot();
+			if (!note.beaten) audios[U"shot"].playOneShot();
 			note.beaten = true;
 		}
 	}
@@ -185,7 +204,7 @@ void Process(Chart& chart, double nowSec, Audio shot) {
 	return;
 }
 
-void Draw(Chart chart, double nowSec, Texture texture_tap, Texture texture_tap_shadow) {
+void Draw(Chart chart, double nowSec, HashTable<String, Texture> textures) {
 	Array<Note> notes = chart.notes;
 	//ラムダ式の定義
 	auto timeToRatio = [=](double time) {//時刻を0~1(表示部分の一番上~一番下)の範囲に変換する,また3(2)次関数にする これは判定位置が下から動いている分も考慮している
@@ -205,8 +224,8 @@ void Draw(Chart chart, double nowSec, Texture texture_tap, Texture texture_tap_s
 			left -= 1;
 			right -= 1;
 		}
-		double leftX = CenterX - LaneW / 2 * timeToRatio(time) * 2*(0.5-left);
-		double rightX = CenterX + LaneW / 2 * timeToRatio(time) * 2*(right-0.5);
+		double leftX = CenterX - (double)LaneW / 2 * timeToRatio(time) * 2*(0.5-left);
+		double rightX = CenterX + (double)LaneW / 2 * timeToRatio(time) * 2*(right-0.5);
 		return std::tuple<double, double>(leftX, rightX);
 	};
 
@@ -220,6 +239,7 @@ void Draw(Chart chart, double nowSec, Texture texture_tap, Texture texture_tap_s
 	//Line{ 0, ResH - (ResH - VPY) * viewTailSec / (viewTailSec - viewHeadSec) - UpperZ, ResW, ResH - (ResH - VPY) * viewTailSec / (viewTailSec - viewHeadSec) - UpperZ }.draw(2, Palette::Lightpink);//判定ライン
 
 
+	textures[U"bg"].draw(0, 0);
 	//ノートを描画
 	for (Note note : notes) {
 		double noteYPosFront = timeToYPos(std::get<0>(note.getPosition()) - 0.02, std::get<1>(note.getPosition()) >= 1);//1以上ならisUpperがtrue
@@ -234,11 +254,21 @@ void Draw(Chart chart, double nowSec, Texture texture_tap, Texture texture_tap_s
 
 			const Quad quad_shadow{ Vec2{ std::get<0>(noteXPosShadow), noteYPosShadow }, Vec2{ std::get<1>(noteXPosShadow), noteYPosShadow },
 				Vec2{ std::get<1>(noteXPos), noteYPos }, Vec2{ std::get<0>(noteXPos), noteYPos } };
-			quad_shadow(texture_tap_shadow).draw();
-
 			const Quad quad_note{ Vec2{ std::get<0>(noteXPosBack), noteYPosBack }, Vec2{ std::get<1>(noteXPosBack), noteYPosBack },
 				Vec2{ std::get<1>(noteXPosFront), noteYPosFront}, Vec2{ std::get<0>(noteXPosFront), noteYPosFront } };
-			quad_note(texture_tap).draw();
+			if (note.getType() == noteType::Tap) {
+				quad_shadow(textures[U"texture_tap_shadow"]).draw();
+				quad_note(textures[U"texture_tap"]).draw();
+			}
+			if (note.getType() == noteType::Trace_s) {
+				quad_shadow(textures[U"texture_trace_shadow"]).draw();
+				quad_note(textures[U"texture_trace"]).draw();
+			}
+			if (note.getType() == noteType::Trace_B) {
+				quad_shadow(textures[U"texture_trace_shadow"]).draw();
+				quad_note(textures[U"texture_trace"]).draw();
+			}
 		}
 	}
+	textures[U"upper"].draw(0, 0);
 }

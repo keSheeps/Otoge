@@ -14,3 +14,7 @@ std::tuple<double, double, double> Note::getPosition() {
 void Note::ApplyOffset(double offset) {
 	timing += offset;
 }
+
+noteType Note::getType(void) {
+	return type;
+}
