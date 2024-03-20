@@ -26,6 +26,17 @@ void Player::update() {
 		}
 		isPressed[i] = keysA[i].pressed();
 	}
+	for (int32 x : getData().detectedHands) {
+		if (x == -1)continue;
+		int i = (15-x) + 16;
+		judgeNotes << chart.getJudgeNote(0.0625 * i + 0.1, 0.0625 * (i + 1) - 0.1, song.posSec(), Settings::perfectSec, noteType::Tap);
+		judgeNotes << chart.getJudgeNote(0.0625 * i + 0.1, 0.0625 * (i + 1) - 0.1, song.posSec(), Settings::perfectSec, noteType::Trace_s);
+		judgeNotes << chart.getJudgeNote(0.0625 * i + 0.1, 0.0625 * (i + 1) - 0.1, song.posSec(), Settings::perfectSec, noteType::Trace_B);
+		judgeNotes << chart.getJudgeNote(0.0625 * i + 0.1, 0.0625 * (i + 1) - 0.1, song.posSec(), Settings::perfectSec, noteType::Swing);
+		#ifdef _DEBUG
+			Print << i;
+		#endif
+	}
 	for (Note* judgeNote : judgeNotes) {
 		if (judgeNote != nullptr) {
 			double noteSec = std::get<0>(judgeNote->getPosition());
@@ -41,10 +52,6 @@ void Player::update() {
 			AudioAsset(U"shot").playOneShot();
 			judgeNote->beaten = true;
 		}
-	}
-	ClearPrint();
-	for (int32 x : getData().detectedHands) {
-		Print << x;
 	}
 #endif
 #ifdef SLIDER

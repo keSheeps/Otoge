@@ -36,7 +36,7 @@ void Main()
 	ChildProcess DetectHand{ U"DetectHands.exe", Pipe::StdInOut };
 
 	manager.get()->chartPath = U"songs/test.cht";
-	manager.init(State::Player);
+	//manager.init(State::Player);
 	while (System::Update())
 	{
 		String input;
