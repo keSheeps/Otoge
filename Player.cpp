@@ -6,11 +6,13 @@ Player::Player(const InitData& init) : IScene{ init },
 	song.play();
 }
 
+bool isPressed[8];
+
 void Player::update() {
 	//ノートを処理
 	Array<Note*> judgeNotes;
 #ifdef KEYS
-	Array<Input> keysA = { KeyC,KeyV,KeyM,KeyComma,Key3,Key4,Key7,Key8 };
+	Array<Input> keysA = { KeyD,KeyF,KeyJ,KeyK,KeyE,KeyR,KeyU,KeyI };
 	for (int i = 0; i < 8; i++) {
 		if (keysA[i].down()) {
 			judgeNotes << chart.getJudgeNote(0.25 * i + 0.1, 0.25 * (i + 1) - 0.1, song.posSec(), Settings::goodSec, noteType::Tap);
@@ -19,12 +21,10 @@ void Player::update() {
 			judgeNotes << chart.getJudgeNote(0.25 * i + 0.1, 0.25 * (i + 1) - 0.1, song.posSec(), Settings::perfectSec, noteType::Trace_s);
 			judgeNotes << chart.getJudgeNote(0.25 * i + 0.1, 0.25 * (i + 1) - 0.1, song.posSec(), Settings::perfectSec, noteType::Trace_B);
 		}
-	}
-	Array<Input> keysB = { KeyD,KeyF,KeyJ,KeyK,KeyE,KeyR,KeyU,KeyI };
-	for (int i = 0; i < 8; i++) {
-		if (keysB[i].down()) {
+		if (isPressed[i] && !keysA[i].pressed()) {
 			judgeNotes << chart.getJudgeNote(0.25 * i + 0.1, 0.25 * (i + 1) - 0.1, song.posSec(), Settings::goodSec, noteType::Swing);
 		}
+		isPressed[i] = keysA[i].pressed();
 	}
 	for (Note* judgeNote : judgeNotes) {
 		if (judgeNote != nullptr) {
@@ -41,6 +41,10 @@ void Player::update() {
 			AudioAsset(U"shot").playOneShot();
 			judgeNote->beaten = true;
 		}
+	}
+	ClearPrint();
+	for (int32 x : getData().detectedHands) {
+		Print << x;
 	}
 #endif
 #ifdef SLIDER
@@ -98,9 +102,11 @@ void Player::draw() const{
 		double noteYPosFront = timeToYPos(std::get<0>(note.getPosition()) - 0.02, std::get<1>(note.getPosition()) >= 1);//1以上ならisUpperがtrue
 		double noteYPos = timeToYPos(std::get<0>(note.getPosition()), std::get<1>(note.getPosition()) >= 1);//同様
 		double noteYPosBack = timeToYPos(std::get<0>(note.getPosition()) + 0.02, std::get<1>(note.getPosition()) >= 1);//同様
+		double noteYPosBack2 = timeToYPos(std::get<0>(note.getPosition()) + 0.04, std::get<1>(note.getPosition()) >= 1);//同様
 		double noteYPosShadow = timeToYPos(std::get<0>(note.getPosition()) + 0.1, std::get<1>(note.getPosition()) >= 1);//同様
 		if ((Settings::VPY < noteYPosBack) and (noteYPosFront < Settings::ResH) and !note.beaten) {
 			auto noteXPosBack = timeToXPos(note.getPosition(), -0.02);
+			auto noteXPosBack2 = timeToXPos(note.getPosition(), -0.04);
 			auto noteXPos = timeToXPos(note.getPosition(), 0);
 			auto noteXPosFront = timeToXPos(note.getPosition(), 0.02);
 			auto noteXPosShadow = timeToXPos(note.getPosition(), 0.1);
@@ -122,8 +128,10 @@ void Player::draw() const{
 				quad_note(TextureAsset(U"texture_trace")).draw();
 			}
 			if (note.getType() == noteType::Swing) {
+				const Quad quad_note_2{ Vec2{ std::get<0>(noteXPosBack2), noteYPosBack2 }, Vec2{ std::get<1>(noteXPosBack2), noteYPosBack2 },
+					Vec2{ std::get<1>(noteXPosFront), noteYPosFront}, Vec2{ std::get<0>(noteXPosFront), noteYPosFront } };
 				quad_shadow(TextureAsset(U"texture_swing_shadow")).draw();
-				quad_note(TextureAsset(U"texture_swing")).draw();
+				quad_note_2(TextureAsset(U"texture_swing")).draw();
 			}
 		}
 	}

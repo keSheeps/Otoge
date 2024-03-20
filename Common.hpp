@@ -19,9 +19,9 @@ namespace Settings {
 	constexpr double greatSec = 0.03333;//±33.33ms
 	constexpr double perfectSec = 0.01667;//±16.67ms
 	//操作タイプ どれか一つを選ぶ
-//#define KEYS
+#define KEYS
 //#define SLIDER
-#define AUTO
+//#define AUTO
 	//動作モード どれか一つを選ぶ
 //#define AC
 #define CS
@@ -39,6 +39,7 @@ enum class State {
 
 struct GameData {
 	String chartPath;
+	Array<int> detectedHands;
 };
 
 using App = SceneManager<State, GameData>;

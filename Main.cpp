@@ -32,12 +32,27 @@ void Main()
 	manager.add<Player>(State::Player);
 	manager.add<Result>(State::Result);
 
-	manager.get()->chartPath = U"test.cht";
+	//手の検出プログラムを開始
+	ChildProcess DetectHand{ U"DetectHands.exe", Pipe::StdInOut };
+
+	manager.get()->chartPath = U"songs/test.cht";
+	manager.init(State::Player);
 	while (System::Update())
 	{
+		String input;
+		DetectHand.istream() >> input;
+		String temp = input.split('\n').back();
+		if (temp != U"") {
+			Print << temp;
+			Array<int32> inputs = temp.split(',').map([](String str) {
+				return Parse<int32>(str);
+			});
+			manager.get()->detectedHands = inputs;
+		}
 		if (not manager.update())//現在のシーンのupdateとdrawの実行
 		{
 			break;
 		}
 	}
+	DetectHand.terminate();
 }
