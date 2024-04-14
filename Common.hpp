@@ -1,6 +1,7 @@
 ﻿# pragma once
 
 # include <Siv3D.hpp> // OpenSiv3D v0.6.14
+# include "Chart.hpp"
 
 namespace Settings {
 	//システム設定
@@ -38,8 +39,16 @@ enum class State {
 };
 
 struct GameData {
+	Array<Chart> songList;
+	uint64 index = 0;
 	String chartPath;
 	Array<int> detectedHands;
+	double HS = 1;
+	uint64 MaxCombo = 0;
+	uint64 Perfect = 0;
+	uint64 Great = 0;
+	uint64 Good = 0;
+	//ミスの数は上の4つから計算する
 };
 
 using App = SceneManager<State, GameData>;

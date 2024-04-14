@@ -1,4 +1,4 @@
-﻿# include "Chart.hpp"
+﻿# include "Common.hpp"//Chart.hppをCommon.hppの中で読む
 
 void MPMChangeList::addMPMChange(double pos, double MPM) {
 	MPMChange mpmChange{};
@@ -54,13 +54,13 @@ noteType Note::getType(void) const {
 	return type;
 }
 
-
 Chart::Chart(String file,bool headerOnly) {
 	
 	TextReader reader{ file };
 	if (not reader) {
 		throw Error{ U"Failed to open chart file." };
 	}
+	path = file;
 	//以下の通り#MPM,#NOTEの#以下の部分は特に意味はないが見た目のため記述を推奨
 	// .chtファイルは"絶対に"UTF-8
 	String line;
@@ -70,7 +70,15 @@ Chart::Chart(String file,bool headerOnly) {
 		if (line[0] == U'/')continue;
 		data[line.split(U':')[0]] = line.split(U':')[1];
 	}
-	if (headerOnly) return;
+	if (headerOnly) {
+		if (data.contains(U"jacket")) {
+			jacket = Texture(FileSystem::PathAppend(FileSystem::ParentPath(file), data[U"jacket"]));
+		}
+		else {
+			jacket = Texture(U"assets/texture-none.png");
+		}
+		return;
+	}
 	//MPM変更地点読込
 	while (reader.readLine(line)) {
 		if (line[0] == U'#')break;
@@ -95,8 +103,7 @@ Chart::Chart(String file,bool headerOnly) {
 	}
 }
 
-
-//一番近い位置のノートを得る，引数:全てのノート,判定位置[判定左位置,判定右位置],現在時刻,判定幅,判定するノートのタイプ
+//一番近い位置のノートを得る，引数:判定位置[判定左位置,判定右位置],現在時刻,判定幅,判定するノートのタイプ
 Note* Chart::getJudgeNote(double left, double right, double nowSec, double judgeSec, noteType type) {
 	Note* judgeNote = nullptr;
 	for (Note& note : notes) {

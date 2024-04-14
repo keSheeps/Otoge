@@ -4,6 +4,10 @@ Player::Player(const InitData& init) : IScene{ init },
 		chart(Chart(getData().chartPath,false)),
 		song(Audio(FileSystem::PathAppend(FileSystem::ParentPath(getData().chartPath), chart.data[U"wav"]))) {//初期化子を使って初期化しよう
 	song.play();
+	getData().MaxCombo = chart.notes.size();
+	getData().Perfect = 0;
+	getData().Great = 0;
+	getData().Good = 0;
 }
 
 bool isPressed[8];
@@ -33,21 +37,18 @@ void Player::update() {
 		judgeNotes << chart.getJudgeNote(0.0625 * i + 0.1, 0.0625 * (i + 1) - 0.1, song.posSec(), Settings::perfectSec, noteType::Trace_s);
 		judgeNotes << chart.getJudgeNote(0.0625 * i + 0.1, 0.0625 * (i + 1) - 0.1, song.posSec(), Settings::perfectSec, noteType::Trace_B);
 		judgeNotes << chart.getJudgeNote(0.0625 * i + 0.1, 0.0625 * (i + 1) - 0.1, song.posSec(), Settings::perfectSec, noteType::Swing);
-		#ifdef _DEBUG
-			Print << i;
-		#endif
 	}
 	for (Note* judgeNote : judgeNotes) {
 		if (judgeNote != nullptr) {
 			double noteSec = std::get<0>(judgeNote->getPosition());
 			if (Abs(noteSec - song.posSec()) <= Settings::perfectSec) {
-				Print << U"Perfect";
+				getData().Perfect += 1;
 			}
 			else if (Abs(noteSec - song.posSec()) <= Settings::greatSec) {
-				Print << U"Great";
+				getData().Great += 1;
 			}
 			else if (Abs(noteSec - song.posSec()) <= Settings::goodSec) {
-				Print << U"Good";
+				getData().Good += 1;
 			}
 			AudioAsset(U"shot").playOneShot();
 			judgeNote->beaten = true;
@@ -72,6 +73,7 @@ void Player::update() {
 		if (song.posSec() > noteSec) {
 			if (!note.beaten) AudioAsset(U"shot").playOneShot();
 			note.beaten = true;
+			getData().Perfect += 1;
 		}
 	}
 #endif
@@ -82,7 +84,7 @@ void Player::draw() const{
 	Array<Note> notes = chart.notes;
 	//ラムダ式の定義
 	auto timeToRatio = [=](double time) {//時刻を0~1(表示部分の一番上~一番下)の範囲に変換する,また3(2)次関数にする これは判定位置が下から動いている分も考慮している
-		double ratio = (song.posSec() - time - Settings::viewHeadSec) / (Settings::viewTailSec - Settings::viewHeadSec);
+		double ratio = (song.posSec() - time - Settings::viewHeadSec / getData().HS) / (Settings::viewTailSec/getData().HS - Settings::viewHeadSec / getData().HS);
 		//return ratio * ratio * (ratio < 0 ? -1 : 1)//２次関数
 		return ratio * ratio * ratio;
 		};

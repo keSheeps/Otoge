@@ -165,6 +165,12 @@
     <ClCompile Include="Chart.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="Result.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Title.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <Image Include="App\icon.ico">
@@ -840,6 +846,12 @@
       <Filter>Header Files\Selector</Filter>
     </ClInclude>
     <ClInclude Include="Chart.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Result.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Title.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

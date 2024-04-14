@@ -4,6 +4,9 @@
 
 class Result : public App::Scene {
 private:
+	Font font{ FontMethod::MSDF, 48 };
+	uint64 Miss;
+	uint64 level;
 public:
 	Result(const InitData& init);
 

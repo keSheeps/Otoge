@@ -1,13 +1,11 @@
 ﻿# pragma once
 
 # include "Common.hpp"
-# include "Chart.hpp"
 
 class Selector : public App::Scene {
 private:
-	Array<Chart> songList;
-	Array<FilePath> chtFiles;//songListとchtFilesの添字は一致
-	uint64 index;
+	Font font{ FontMethod::MSDF, 48 };
+	uint64 state=0;
 public:
 	Selector(const InitData& init);
 

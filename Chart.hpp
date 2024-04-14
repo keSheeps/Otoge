@@ -58,4 +58,6 @@ public:
 	Array<Note> notes;//ノートのリスト
 	Note* getJudgeNote(double left, double right, double nowSec, double judgeSec, noteType type);//nowSecから一番近いleft~rightのノート(typeであるもの)を取得
 	Note* getJudgeNote(				  double pos, double nowSec, double judgeSec, noteType type);//nowSecから一番近い		posのノート(typeであるもの)を取得
+	Texture jacket;
+	String path;
 };

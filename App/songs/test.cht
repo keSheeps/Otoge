@@ -1,11 +1,15 @@
 /title:曲名
 title:test1
 /composer:作曲者名
-composer:
+composer:composer
 /designer:譜面作者名
-designer:
+designer:designer
+/level:レベル(数値)
+level:1
 /wav:音声ファイルのパス
 wav:test.wav
+/jacket:絵のファイルのパス
+/jacket:test.png
 /offset:ノートのタイミングを -:早くする +:遅くする (単位[s])
 offset:0
 /MPM変化位置
