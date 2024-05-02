@@ -108,8 +108,10 @@ Note* Chart::getJudgeNote(double left, double right, double nowSec, double judge
 	Note* judgeNote = nullptr;
 	for (Note& note : notes) {
 		double noteSec = std::get<0>(note.getPosition());
-		double noteLeft = std::get<1>(note.getPosition());
-		double noteRight = std::get <2>(note.getPosition());
+		double notePos1 = std::get<1>(note.getPosition());
+		double notePos2 = std::get<2>(note.getPosition());
+		double noteLeft = Min(notePos1,notePos2);
+		double noteRight = Max(notePos1, notePos2);
 		if (note.getType() != type) continue;//判定する種類のノートでなかったら×
 		if (note.beaten) continue;//ノートがすでに叩かれていたら×
 		if (!((left <= noteLeft and noteLeft <= right) or (left <= noteRight and noteRight <= right)
@@ -125,8 +127,10 @@ Note* Chart::getJudgeNote(double pos, double nowSec, double judgeSec, noteType t
 	Note* judgeNote = nullptr;
 	for (Note& note : notes) {
 		double noteSec = std::get<0>(note.getPosition());
-		double noteLeft = std::get<1>(note.getPosition());
-		double noteRight = std::get <2>(note.getPosition());
+		double notePos1 = std::get<1>(note.getPosition());
+		double notePos2 = std::get<2>(note.getPosition());
+		double noteLeft = Min(notePos1, notePos2);
+		double noteRight = Max(notePos1, notePos2);
 		if (note.getType() != type) continue;//判定する種類のノートでなかったら×
 		if (note.beaten) continue;//ノートがすでに叩かれていたら×
 		if (!(noteLeft <= pos and pos <= noteRight)) continue;//叩いた位置とノートが重なっていなかったら×

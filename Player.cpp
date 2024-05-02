@@ -19,24 +19,24 @@ void Player::update() {
 	Array<Input> keysA = { KeyD,KeyF,KeyJ,KeyK,KeyE,KeyR,KeyU,KeyI };
 	for (int i = 0; i < 8; i++) {
 		if (keysA[i].down()) {
-			judgeNotes << chart.getJudgeNote(0.25 * i + 0.1, 0.25 * (i + 1) - 0.1, song.posSec(), Settings::goodSec, noteType::Tap);
+			judgeNotes << chart.getJudgeNote(0.25 * i + 0.01, 0.25 * (i + 1) - 0.01, song.posSec(), Settings::goodSec, noteType::Tap);
 		}
 		if (keysA[i].pressed()) {
-			judgeNotes << chart.getJudgeNote(0.25 * i + 0.1, 0.25 * (i + 1) - 0.1, song.posSec(), Settings::perfectSec, noteType::Trace_s);
-			judgeNotes << chart.getJudgeNote(0.25 * i + 0.1, 0.25 * (i + 1) - 0.1, song.posSec(), Settings::perfectSec, noteType::Trace_B);
+			judgeNotes << chart.getJudgeNote(0.25 * i + 0.01, 0.25 * (i + 1) - 0.01, song.posSec(), Settings::perfectSec, noteType::Trace_s);
+			judgeNotes << chart.getJudgeNote(0.25 * i + 0.01, 0.25 * (i + 1) - 0.01, song.posSec(), Settings::perfectSec, noteType::Trace_B);
 		}
 		if (isPressed[i] && !keysA[i].pressed()) {
-			judgeNotes << chart.getJudgeNote(0.25 * i + 0.1, 0.25 * (i + 1) - 0.1, song.posSec(), Settings::goodSec, noteType::Swing);
+			judgeNotes << chart.getJudgeNote(0.25 * i + 0.01, 0.25 * (i + 1) - 0.01, song.posSec(), Settings::goodSec, noteType::Swing);
 		}
 		isPressed[i] = keysA[i].pressed();
 	}
 	for (int32 x : getData().detectedHands) {
 		if (x == -1)continue;
-		int i = (15-x) + 16;
-		judgeNotes << chart.getJudgeNote(0.0625 * i + 0.1, 0.0625 * (i + 1) - 0.1, song.posSec(), Settings::perfectSec, noteType::Tap);
-		judgeNotes << chart.getJudgeNote(0.0625 * i + 0.1, 0.0625 * (i + 1) - 0.1, song.posSec(), Settings::perfectSec, noteType::Trace_s);
-		judgeNotes << chart.getJudgeNote(0.0625 * i + 0.1, 0.0625 * (i + 1) - 0.1, song.posSec(), Settings::perfectSec, noteType::Trace_B);
-		judgeNotes << chart.getJudgeNote(0.0625 * i + 0.1, 0.0625 * (i + 1) - 0.1, song.posSec(), Settings::perfectSec, noteType::Swing);
+		int i = x;//(15-x) + 16;
+		judgeNotes << chart.getJudgeNote(0.0625 * i + 1.0, 0.0625 * (i + 1) + 1.0, song.posSec(), Settings::perfectSec, noteType::Tap);
+		judgeNotes << chart.getJudgeNote(0.0625 * i + 1.0, 0.0625 * (i + 1) + 1.0, song.posSec(), Settings::perfectSec, noteType::Trace_s);
+		judgeNotes << chart.getJudgeNote(0.0625 * i + 1.0, 0.0625 * (i + 1) + 1.0, song.posSec(), Settings::perfectSec, noteType::Trace_B);
+		judgeNotes << chart.getJudgeNote(0.0625 * i + 1.0, 0.0625 * (i + 1) + 1.0, song.posSec(), Settings::perfectSec, noteType::Swing);
 	}
 	for (Note* judgeNote : judgeNotes) {
 		if (judgeNote != nullptr) {

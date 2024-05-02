@@ -18,7 +18,7 @@ namespace Settings {
 	//判定位置 goodSec>greatSec>perfectSecを要請する
 	constexpr double goodSec = 0.11667;//±116.67ms
 	constexpr double greatSec = 0.03333;//±33.33ms
-	constexpr double perfectSec = 0.01667;//±16.67ms
+	constexpr double perfectSec = 0.02;//±20.00ms
 	//操作タイプ どれか一つを選ぶ
 #define KEYS
 //#define SLIDER
