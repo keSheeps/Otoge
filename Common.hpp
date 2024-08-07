@@ -19,10 +19,6 @@ namespace Settings {
 	constexpr double goodSec = 0.11667;//±116.67ms
 	constexpr double greatSec = 0.03333;//±33.33ms
 	constexpr double perfectSec = 0.02;//±20.00ms
-	//操作タイプ どれか一つを選ぶ
-#define KEYS
-//#define SLIDER
-//#define AUTO
 	//動作モード どれか一つを選ぶ
 //#define AC
 #define CS
@@ -44,6 +40,8 @@ struct GameData {
 	String chartPath;
 	Array<int> detectedHands;
 	double HS = 1;
+	double startPos = 0;
+	bool isAuto = false;
 	uint64 MaxCombo = 0;
 	uint64 Perfect = 0;
 	uint64 Great = 0;

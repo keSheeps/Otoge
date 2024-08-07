@@ -12,7 +12,7 @@ double MPMChangeList::getSec(double pos) {
 	double noteSec = 0;//合計秒数
 	double lastPos = 0;//終点位置
 	bool brk = false;
-	if (MPMList.size() == 0) { Print << U"BPM設定がありません"; return -1; }
+	if (MPMList.size() == 0) { Print << U"MPM設定がありません"; return -1; }
 	for (int i = 0; i < MPMList.size() and !brk; i++) {
 		//measure+posで位置を表せる
 		if (static_cast<size_t>(i) + 1 < MPMList.size()) {
@@ -54,7 +54,7 @@ noteType Note::getType(void) const {
 	return type;
 }
 
-Chart::Chart(String file,bool headerOnly) {
+Chart::Chart(String file,bool headerOnly, double startPos) {
 	
 	TextReader reader{ file };
 	if (not reader) {
@@ -94,6 +94,7 @@ Chart::Chart(String file,bool headerOnly) {
 		if (line.split(U',')[1] == U"Trace_s") { type = noteType::Trace_s; }
 		if (line.split(U',')[1] == U"Trace_B") { type = noteType::Trace_B; }
 		if (line.split(U',')[1] == U"Swing") { type = noteType::Swing; }
+		if (line.split(U',')[1] == U"Guide") { type = noteType::Guide; }
 		if (type == noteType::Unset) { continue; }
 		Note note(Parse<double>(line.split(U',')[0]), type, Parse<double>(line.split(U',')[2]), Parse<double>(line.split(U',')[3]), mpmCngList);//ノート種別も入れる
 		if (data.contains(U"offset")) {
@@ -101,6 +102,7 @@ Chart::Chart(String file,bool headerOnly) {
 		}
 		notes << note;
 	}
+	startSec = mpmCngList.getSec(startPos);
 }
 
 //一番近い位置のノートを得る，引数:判定位置[判定左位置,判定右位置],現在時刻,判定幅,判定するノートのタイプ

@@ -8,7 +8,7 @@ bool IsChtFile(const FilePath& path)
 {
 	return (FileSystem::Extension(path) == U"cht");
 }
-
+//# define USE_DETECT_HANDS
 void Main()
 {
 	// シーンのサイズを固定
@@ -49,23 +49,37 @@ void Main()
 	manager.add<Selector>(State::Selector);
 	manager.add<Player>(State::Player);
 	manager.add<Result>(State::Result);
+	//第1引数は.exeファイルの位置 第2引数:譜面パス(既定:選曲から開始) 第3引数:HS(既定:1) 第4引数:開始小節(既定:0)
+	const Array<String> args = System::GetCommandLineArgs();
+	if (size(args) >= 2) {
+		manager.get()->chartPath = args[1];
+		if (size(args) >= 3) {
+			manager.get()->HS = Parse<double>(args[2]);
+			if (size(args) >= 4) {
+				manager.get()->startPos = Parse<double>(args[3]);
+			}
+		}
+		manager.init(State::Player);//ここでコンストラクタが呼ばれるので前においてはいけない
+		manager.get()->isAuto = true;
+	}
 
 	//曲をすべて取得
 	const Array<FilePath> paths = FileSystem::DirectoryContents(Settings::songsDir);
 	const Array<FilePath> chtFiles = paths.filter(IsChtFile);
 	for (const auto& path : chtFiles)
 	{
-		Chart chart = Chart(path, true);
+		Chart chart = Chart(path, true, 0);
 		manager.get()->songList << chart;
 	}
 
 	//手の検出プログラムを開始
+#ifdef USE_DETECT_HANDS
 	ChildProcess DetectHand{ U"DetectHands.exe", Pipe::StdInOut };
-
-	//manager.get()->chartPath = U"songs/test.cht";
-	//manager.init(State::Result);
+#endif
 	while (System::Update())
 	{
+#ifdef USE_DETECT_HANDS
+
 		String input;
 		DetectHand.istream() >> input;
 		String temp = input.split('\n').back();
@@ -75,10 +89,13 @@ void Main()
 			});
 			manager.get()->detectedHands = inputs;
 		}
+#endif
 		if (not manager.update())//現在のシーンのupdateとdrawの実行
 		{
 			break;
 		}
 	}
+#ifdef USE_DETECT_HANDS
 	DetectHand.terminate();
+#endif
 }

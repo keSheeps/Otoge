@@ -1,9 +1,10 @@
 ﻿# include "Player.hpp"
 
 Player::Player(const InitData& init) : IScene{ init },
-		chart(Chart(getData().chartPath,false)),
+		chart(Chart(getData().chartPath,false,getData().startPos)),
 		song(Audio(FileSystem::PathAppend(FileSystem::ParentPath(getData().chartPath), chart.data[U"wav"]))) {//初期化子を使って初期化しよう
 	song.play();
+	song.seekTime(chart.startSec);
 	getData().MaxCombo = chart.notes.size();
 	getData().Perfect = 0;
 	getData().Great = 0;
@@ -13,9 +14,10 @@ Player::Player(const InitData& init) : IScene{ init },
 bool isPressed[8];
 
 void Player::update() {
+	if (!song.isPlaying())changeScene(State::Result);
 	//ノートを処理
 	Array<Note*> judgeNotes;
-#ifdef KEYS
+//keys
 	Array<Input> keysA = { KeyD,KeyF,KeyJ,KeyK,KeyE,KeyR,KeyU,KeyI };
 	for (int i = 0; i < 8; i++) {
 		if (keysA[i].down()) {
@@ -50,34 +52,28 @@ void Player::update() {
 			else if (Abs(noteSec - song.posSec()) <= Settings::goodSec) {
 				getData().Good += 1;
 			}
+			if (judgeNote->getType() == noteType::Trace_s) {
+				AudioAsset(U"shot").setVolume(0.4);
+			} else {
+				AudioAsset(U"shot").setVolume(1.0);
+			}
 			AudioAsset(U"shot").playOneShot();
 			judgeNote->beaten = true;
 		}
 	}
-#endif
-#ifdef SLIDER
-	Array<double> poses;
-	//ここでposesを取得(タッチされている座標)
-	Note* judgeNote;
-	for (double pos : poses) {
-		judgeNote = chart.getJudgeNote(pos, song.posSec(), Settings::goodSec, noteType::Tap);
-		if (judgeNote != nullptr) {
-			AudioAsset(U"shot").playOneShot();
-			judgeNote->beaten = true;
-		}
-	}
-#endif
-#ifdef AUTO
+//auto
+	bool beat;
+	beat = false;
+	if (!getData().isAuto) { return; }
 	for (Note& note : chart.notes) {
 		double noteSec = std::get<0>(note.getPosition());
-		if (song.posSec() > noteSec) {
-			if (!note.beaten) AudioAsset(U"shot").playOneShot();
+		if (song.posSec() > noteSec && note.getType()!=noteType::Guide && note.beaten==false) {
 			note.beaten = true;
 			getData().Perfect += 1;
+			beat = true;
 		}
 	}
-#endif
-	if (!song.isPlaying())changeScene(State::Result);
+	if (beat) AudioAsset(U"shot").playOneShot();
 }
 
 void Player::draw() const{
@@ -108,12 +104,13 @@ void Player::draw() const{
 	TextureAsset(U"bg").draw(0, 0);
 	//ノートを描画
 	for (Note note : notes) {
-		double noteYPosFront = timeToYPos(std::get<0>(note.getPosition()) - 0.02, std::get<1>(note.getPosition()) >= 1);//1以上ならisUpperがtrue
-		double noteYPos = timeToYPos(std::get<0>(note.getPosition()), std::get<1>(note.getPosition()) >= 1);//同様
-		double noteYPosBack = timeToYPos(std::get<0>(note.getPosition()) + 0.02, std::get<1>(note.getPosition()) >= 1);//同様
-		double noteYPosBack2 = timeToYPos(std::get<0>(note.getPosition()) + 0.04, std::get<1>(note.getPosition()) >= 1);//同様
-		double noteYPosShadow = timeToYPos(std::get<0>(note.getPosition()) + 0.1, std::get<1>(note.getPosition()) >= 1);//同様
-		if ((Settings::VPY < noteYPosBack) and (noteYPosFront < Settings::ResH) and !note.beaten) {
+		auto isUpper = std::get<1>(note.getPosition()) >= 1;//1以上ならisUpperがtrue
+		double noteYPosFront = timeToYPos(std::get<0>(note.getPosition()) - 0.02 - 0.04*isUpper, isUpper);
+		double noteYPos = timeToYPos(std::get<0>(note.getPosition()), isUpper);
+		double noteYPosBack = timeToYPos(std::get<0>(note.getPosition()) + 0.02, isUpper);
+		double noteYPosBack2 = timeToYPos(std::get<0>(note.getPosition()) + 0.04, isUpper);
+		double noteYPosShadow = timeToYPos(std::get<0>(note.getPosition()) + 0.1, isUpper);
+		if ((Settings::VPY < noteYPosBack) and (noteYPosFront + Settings::UpperZ*isUpper < Settings::ResH) and !note.beaten) {
 			auto noteXPosBack = timeToXPos(note.getPosition(), -0.02);
 			auto noteXPosBack2 = timeToXPos(note.getPosition(), -0.04);
 			auto noteXPos = timeToXPos(note.getPosition(), 0);
@@ -141,6 +138,9 @@ void Player::draw() const{
 					Vec2{ std::get<1>(noteXPosFront), noteYPosFront}, Vec2{ std::get<0>(noteXPosFront), noteYPosFront } };
 				quad_shadow(TextureAsset(U"texture_swing_shadow")).draw();
 				quad_note_2(TextureAsset(U"texture_swing")).draw();
+			}
+			if (note.getType() == noteType::Guide) {
+				quad_shadow(TextureAsset(U"texture_trace_shadow")).draw();
 			}
 		}
 	}
