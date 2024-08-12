@@ -12,6 +12,13 @@ Result::Result(const InitData& init) : IScene{ init } {
 }
 
 void Result::update() {
+	if (const auto slider = Gamepad(0)) {
+		for (auto [i, button] : Indexed(slider.buttons)) {
+			if (button.down() && 12 <= i) {
+				changeScene(State::Selector);
+		}
+	}
+	}
 	if (KeyK.down()) {
 		#ifdef AC
 			changeScene(State::Title);

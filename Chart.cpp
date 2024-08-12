@@ -94,7 +94,7 @@ Chart::Chart(String file,bool headerOnly, double startPos) {
 		if (line.split(U',')[1] == U"Trace_s") { type = noteType::Trace_s; }
 		if (line.split(U',')[1] == U"Trace_B") { type = noteType::Trace_B; }
 		if (line.split(U',')[1] == U"Swing") { type = noteType::Swing; }
-		if (line.split(U',')[1] == U"Guide") { type = noteType::Guide; }
+		//if (line.split(U',')[1] == U"Guide") { type = noteType::Guide; } //なかったことにされたGuideノート君 実装する場合は総コンボ数から引くのを忘れずに
 		if (type == noteType::Unset) { continue; }
 		Note note(Parse<double>(line.split(U',')[0]), type, Parse<double>(line.split(U',')[2]), Parse<double>(line.split(U',')[3]), mpmCngList);//ノート種別も入れる
 		if (data.contains(U"offset")) {

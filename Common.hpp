@@ -40,6 +40,7 @@ struct GameData {
 	String chartPath;
 	Array<int> detectedHands;
 	double HS = 1;
+	int volume_per = 100;
 	double startPos = 0;
 	bool isAuto = false;
 	uint64 MaxCombo = 0;

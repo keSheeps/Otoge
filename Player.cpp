@@ -4,20 +4,23 @@ Player::Player(const InitData& init) : IScene{ init },
 		chart(Chart(getData().chartPath,false,getData().startPos)),
 		song(Audio(FileSystem::PathAppend(FileSystem::ParentPath(getData().chartPath), chart.data[U"wav"]))) {//初期化子を使って初期化しよう
 	song.play();
+	song.setVolume(((double)getData().volume_per) / 100);
 	song.seekTime(chart.startSec);
+	trace_s_vol = Parse<double>(chart.data[U"tracesvol"]);
 	getData().MaxCombo = chart.notes.size();
 	getData().Perfect = 0;
 	getData().Great = 0;
 	getData().Good = 0;
 }
 
-bool isPressed[8];
+bool isPressed_key[8];
+bool isPressed_slider[16];
 
 void Player::update() {
 	if (!song.isPlaying())changeScene(State::Result);
 	//ノートを処理
 	Array<Note*> judgeNotes;
-//keys
+	//キーボード
 	Array<Input> keysA = { KeyD,KeyF,KeyJ,KeyK,KeyE,KeyR,KeyU,KeyI };
 	for (int i = 0; i < 8; i++) {
 		if (keysA[i].down()) {
@@ -27,11 +30,28 @@ void Player::update() {
 			judgeNotes << chart.getJudgeNote(0.25 * i + 0.01, 0.25 * (i + 1) - 0.01, song.posSec(), Settings::perfectSec, noteType::Trace_s);
 			judgeNotes << chart.getJudgeNote(0.25 * i + 0.01, 0.25 * (i + 1) - 0.01, song.posSec(), Settings::perfectSec, noteType::Trace_B);
 		}
-		if (isPressed[i] && !keysA[i].pressed()) {
+		if (isPressed_key[i] && !keysA[i].pressed()) {
 			judgeNotes << chart.getJudgeNote(0.25 * i + 0.01, 0.25 * (i + 1) - 0.01, song.posSec(), Settings::goodSec, noteType::Swing);
 		}
-		isPressed[i] = keysA[i].pressed();
+		isPressed_key[i] = keysA[i].pressed();
 	}
+	//スライダー
+	if (const auto slider = Gamepad(0)) {
+		for (auto [i, button] : Indexed(slider.buttons)) {
+			if (button.down()) {
+				judgeNotes << chart.getJudgeNote(0.0625 * i + 0.01, 0.0625 * (i + 1) - 0.01, song.posSec(), Settings::goodSec, noteType::Tap);
+			}
+			if (button.pressed()) {
+				judgeNotes << chart.getJudgeNote(0.0625 * i + 0.01, 0.0625 * (i + 1) - 0.01, song.posSec(), Settings::perfectSec, noteType::Trace_s);
+				judgeNotes << chart.getJudgeNote(0.0625 * i + 0.01, 0.0625 * (i + 1) - 0.01, song.posSec(), Settings::perfectSec, noteType::Trace_B);
+			}
+			if (isPressed_slider[i] && !button.pressed()) {
+				judgeNotes << chart.getJudgeNote(0.0625 * i + 0.01, 0.0625 * (i + 1) - 0.01, song.posSec(), Settings::goodSec, noteType::Swing);
+			}
+			isPressed_slider[i] = button.pressed();
+		}
+	}
+	//上レーン
 	for (int32 x : getData().detectedHands) {
 		if (x == -1)continue;
 		int i = x;//(15-x) + 16;
@@ -40,8 +60,10 @@ void Player::update() {
 		judgeNotes << chart.getJudgeNote(0.0625 * i + 1.0, 0.0625 * (i + 1) + 1.0, song.posSec(), Settings::perfectSec, noteType::Trace_B);
 		judgeNotes << chart.getJudgeNote(0.0625 * i + 1.0, 0.0625 * (i + 1) + 1.0, song.posSec(), Settings::perfectSec, noteType::Swing);
 	}
+	//押下されたノートを処理
 	for (Note* judgeNote : judgeNotes) {
 		if (judgeNote != nullptr) {
+			if (judgeNote->beaten)continue;
 			double noteSec = std::get<0>(judgeNote->getPosition());
 			if (Abs(noteSec - song.posSec()) <= Settings::perfectSec) {
 				getData().Perfect += 1;
@@ -53,17 +75,16 @@ void Player::update() {
 				getData().Good += 1;
 			}
 			if (judgeNote->getType() == noteType::Trace_s) {
-				AudioAsset(U"shot").setVolume(0.4);
+				AudioAsset(U"shot").playOneShot(trace_s_vol);//音量設定あり
 			} else {
-				AudioAsset(U"shot").setVolume(1.0);
+				AudioAsset(U"shot").playOneShot();
 			}
-			AudioAsset(U"shot").playOneShot();
 			judgeNote->beaten = true;
 		}
 	}
-//auto
-	bool beat;
-	beat = false;
+	//auto
+	bool beat = false;
+	bool isTrace_sOnly = true;
 	if (!getData().isAuto) { return; }
 	for (Note& note : chart.notes) {
 		double noteSec = std::get<0>(note.getPosition());
@@ -71,9 +92,12 @@ void Player::update() {
 			note.beaten = true;
 			getData().Perfect += 1;
 			beat = true;
+			if (note.getType() != noteType::Trace_s) {
+				isTrace_sOnly = false;
+			}
 		}
 	}
-	if (beat) AudioAsset(U"shot").playOneShot();
+	if (beat) AudioAsset(U"shot").playOneShot(isTrace_sOnly ? trace_s_vol : 1);
 }
 
 void Player::draw() const{
@@ -105,11 +129,11 @@ void Player::draw() const{
 	//ノートを描画
 	for (Note note : notes) {
 		auto isUpper = std::get<1>(note.getPosition()) >= 1;//1以上ならisUpperがtrue
-		double noteYPosFront = timeToYPos(std::get<0>(note.getPosition()) - 0.02 - 0.04*isUpper, isUpper);
+		double noteYPosFront = timeToYPos(std::get<0>(note.getPosition()) - (0.02 + 0.04 * isUpper) / getData().HS, isUpper);
 		double noteYPos = timeToYPos(std::get<0>(note.getPosition()), isUpper);
-		double noteYPosBack = timeToYPos(std::get<0>(note.getPosition()) + 0.02, isUpper);
-		double noteYPosBack2 = timeToYPos(std::get<0>(note.getPosition()) + 0.04, isUpper);
-		double noteYPosShadow = timeToYPos(std::get<0>(note.getPosition()) + 0.1, isUpper);
+		double noteYPosBack = timeToYPos(std::get<0>(note.getPosition()) + 0.02/getData().HS, isUpper);
+		double noteYPosBack2 = timeToYPos(std::get<0>(note.getPosition()) + 0.04 / getData().HS, isUpper);
+		double noteYPosShadow = timeToYPos(std::get<0>(note.getPosition()) + 0.1 / getData().HS, isUpper);
 		if ((Settings::VPY < noteYPosBack) and (noteYPosFront + Settings::UpperZ*isUpper < Settings::ResH) and !note.beaten) {
 			auto noteXPosBack = timeToXPos(note.getPosition(), -0.02);
 			auto noteXPosBack2 = timeToXPos(note.getPosition(), -0.04);

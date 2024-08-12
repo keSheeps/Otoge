@@ -2,42 +2,70 @@
 
 Selector::Selector(const InitData& init) : IScene{ init } {
 }
-
+int cursor = 0;
 void Selector::update() {
 	ClearPrint();
+	bool pressedD=false, pressedF = false, pressedJ = false, pressedK = false;
+	if (const auto slider = Gamepad(0)) {
+		for (auto [i, button] : Indexed(slider.buttons)) {
+			if (button.down()) {
+				if (0 <= i && i <= 3) pressedD = true;
+				if (4 <= i && i <= 7) pressedF = true;
+				if (8 <= i && i <= 11) pressedJ = true;
+				if (12 <= i && i <= 15) pressedK = true;
+			}
+		}
+	}
 	if (state == 0) {
-		if (KeyF.down()) {
+		if (KeyD.down() || pressedD) state = 1;
+		if (KeyF.down() || pressedF) {
 			if ((int64)getData().index - 1 < 0)getData().index = getData().songList.size();
 			getData().index = getData().index - 1;
 		}
-		if (KeyJ.down()) {
+		if (KeyJ.down() || pressedJ) {
 			getData().index = getData().index + 1;
 			if (getData().index >= getData().songList.size())getData().index = 0;
 		}
-		if (KeyD.down())state = 1;
 	}else if (state == 1) {
-		if (KeyF.down()) {
+		if (KeyF.down() || pressedF) {
 			state = 0;
 		}
-		if (KeyJ.down()) {
+		if (KeyJ.down() || pressedJ) {
 			getData().chartPath = getData().songList[getData().index].path;
 			changeScene(State::Player);
 		}
-		if (KeyK.down()) state = 2;
+		if (KeyK.down() || pressedK) state = 2;
 	}
 	else if (state == 2) {
-		if (KeyK.down()) state = 1;
+		if (KeyD.down() || pressedD) {
+			if (cursor == 0) {
+				getData().volume_per += 10;
+				if (getData().volume_per > 100) getData().volume_per = 10;
+			}
+			if (cursor == 1) {
+				getData().HS += 0.5;
+				if (getData().HS > 4) getData().HS = 0.5;
+			}
+		}
+		if (KeyF.down() || pressedF) {
+			cursor = 0;
+		}
+		if (KeyJ.down() || pressedJ) {
+			cursor = 1;
+		}
+		if (KeyK.down() || pressedK) state = 1;
 	}
 }
 
 void Selector::draw() const {
 	TextureAsset(U"background").draw(0, 0);
-	TextureAsset(U"panel").drawAt(Settings::ResW / 2, Settings::ResH / 2);
+	//パネル
 	if (state == 0) {
 		TextureAsset(U"panel").drawAt(-Settings::ResW / 3, Settings::ResH / 2);
 		TextureAsset(U"panel").drawAt(Settings::ResW + Settings::ResW / 3, Settings::ResH / 2);
 	}
 	if (state == 0 || state == 1) {
+		TextureAsset(U"panel").drawAt(Settings::ResW / 2, Settings::ResH / 2);
 		uint64 i = 0;
 		for (Chart song : getData().songList) {
 			if (i == getData().index) {
@@ -68,16 +96,28 @@ void Selector::draw() const {
 			i++;
 		}
 	}
+	if (state == 2) {
+		TextureAsset(U"panel-half").drawAt(Settings::ResW / 4, Settings::ResH / 2);
+		TextureAsset(U"panel-half").drawAt(Settings::ResW / 4 * 3, Settings::ResH / 2);
+		font(U"Volume").drawAt(Settings::ResW / 4, 300, ColorF(0, 0, 0));
+		font(U"Hi-speed").drawAt(Settings::ResW / 4 * 3, 300, ColorF(0, 0, 0));
+		font(Format((double)getData().volume_per) + U"%").drawAt(Settings::ResW / 4, 400, ColorF(0.7 * (cursor == 0), 0.7 * (cursor == 0), 0));
+		font(U"x" + Format(getData().HS)).drawAt(Settings::ResW / 4 * 3, 400, ColorF(0.7 * (cursor == 1), 0.7 * (cursor == 1), 0));
+	}
+	//操作表示
 	if (state == 0) {
 		font(U"Decide").drawAt(Scene::Size().x / 8 * 1, Scene::Size().y - 50);
 		font(U"←").drawAt(Scene::Size().x / 8 * 3, Scene::Size().y - 50);
 		font(U"→").drawAt(Scene::Size().x / 8 * 5, Scene::Size().y - 50);
-		//font(U"Change Lv.").drawAt(Scene::Size().x / 8 * 7, Scene::Size().y - 50);
+		//font(U"Change Lv.").drawAt(Scene::Size().x / 8 * 7, Scene::Size().y - 50);//譜面に複数レベルを入れるのをやめた
 	}else if (state == 1) {
 		font(U"Cancel").drawAt(Scene::Size().x / 8 * 3, Scene::Size().y - 50);
 		font(U"Play").drawAt(Scene::Size().x / 8 * 5, Scene::Size().y - 50);
 		font(U"Settings").drawAt(Scene::Size().x / 8 * 7, Scene::Size().y - 50);
 	}else if (state == 2) {
+		font(U"Change").drawAt(Scene::Size().x / 8 * 1, Scene::Size().y - 50);
+		font(U"←").drawAt(Scene::Size().x / 8 * 3, Scene::Size().y - 50);
+		font(U"→").drawAt(Scene::Size().x / 8 * 5, Scene::Size().y - 50);
 		font(U"Back").drawAt(Scene::Size().x / 8 * 7, Scene::Size().y - 50);
 	}
 }

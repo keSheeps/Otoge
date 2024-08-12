@@ -8,7 +8,13 @@ bool IsChtFile(const FilePath& path)
 {
 	return (FileSystem::Extension(path) == U"cht");
 }
-//# define USE_DETECT_HANDS
+
+String getDetectedHands(ChildProcess DetectHand) {
+	String input;
+	DetectHand.istream() >> input;
+	return input.split('\n').back();
+}
+
 void Main()
 {
 	// シーンのサイズを固定
@@ -42,6 +48,9 @@ void Main()
 	TextureAsset::Register(U"result-FC", U"assets/result-FC.png");
 	TextureAsset::Register(U"result-AP", U"assets/result-AP.png");
 
+	//設定ファイルを読む
+	const INI ini{ U"config.ini" };
+	bool useDetectHands = Parse<bool>(ini[U"System.useDetectHands"]);
 
 	//シーンの登録
 	App manager;
@@ -61,6 +70,7 @@ void Main()
 		}
 		manager.init(State::Player);//ここでコンストラクタが呼ばれるので前においてはいけない
 		manager.get()->isAuto = true;
+		useDetectHands = false;
 	}
 
 	//曲をすべて取得
@@ -73,29 +83,36 @@ void Main()
 	}
 
 	//手の検出プログラムを開始
-#ifdef USE_DETECT_HANDS
-	ChildProcess DetectHand{ U"DetectHands.exe", Pipe::StdInOut };
-#endif
+	ChildProcess DetectHand;
+	AsyncTask<String> task;
+	if (useDetectHands) {
+		DetectHand = ChildProcess(U"DetectHands.exe", Pipe::StdInOut);
+		task = Async(getDetectedHands, DetectHand);
+	}
 	while (System::Update())
 	{
-#ifdef USE_DETECT_HANDS
-
-		String input;
-		DetectHand.istream() >> input;
-		String temp = input.split('\n').back();
-		if (temp != U"") {
-			Array<int32> inputs = temp.split(',').map([](String str) {
-				return Parse<int32>(str);
-			});
-			manager.get()->detectedHands = inputs;
+		if (useDetectHands) {
+			if (task.isReady()) {
+				String temp = task.get();
+				if (temp != U"") {
+					Array<int32> inputs = temp.split(',').map([](String str) {
+						return Parse<int32>(str);
+					});
+					manager.get()->detectedHands = inputs;
+				}
+				task = Async(getDetectedHands, DetectHand);
+			}
 		}
-#endif
 		if (not manager.update())//現在のシーンのupdateとdrawの実行
 		{
 			break;
 		}
 	}
-#ifdef USE_DETECT_HANDS
-	DetectHand.terminate();
-#endif
+	if (useDetectHands) {
+		if (task.isValid())
+		{
+			task.wait();
+		}
+		DetectHand.terminate();
+	}
 }
