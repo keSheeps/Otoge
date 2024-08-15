@@ -39,6 +39,7 @@ struct GameData {
 	uint64 index = 0;
 	String chartPath;
 	Array<int> detectedHands;
+	bool enableSwing=false;
 	double HS = 1;
 	int volume_per = 100;
 	double startPos = 0;

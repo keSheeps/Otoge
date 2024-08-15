@@ -51,6 +51,7 @@ void Main()
 	//設定ファイルを読む
 	const INI ini{ U"config.ini" };
 	bool useDetectHands = Parse<bool>(ini[U"System.useDetectHands"]);
+	bool enableSwing = Parse<bool>(ini[U"System.enableSwing"]);
 
 	//シーンの登録
 	App manager;
@@ -58,6 +59,7 @@ void Main()
 	manager.add<Selector>(State::Selector);
 	manager.add<Player>(State::Player);
 	manager.add<Result>(State::Result);
+	manager.get()->enableSwing = enableSwing;
 	//第1引数は.exeファイルの位置 第2引数:譜面パス(既定:選曲から開始) 第3引数:HS(既定:1) 第4引数:開始小節(既定:0)
 	const Array<String> args = System::GetCommandLineArgs();
 	if (size(args) >= 2) {

@@ -15,6 +15,7 @@ Player::Player(const InitData& init) : IScene{ init },
 
 bool isPressed_key[8];
 bool isPressed_slider[16];
+bool isPressed_above[16];
 
 void Player::update() {
 	if (!song.isPlaying())changeScene(State::Result);
@@ -51,14 +52,31 @@ void Player::update() {
 			isPressed_slider[i] = button.pressed();
 		}
 	}
-	//上レーン
+	//上レーン detectedHandsの構造のせいで分かりにくい
+	bool isPressed_above_new[16];//後で最新に更新する
+	for (int32 i = 0; i < 16; i++) {
+		isPressed_above_new[i] = false;
+	}
 	for (int32 x : getData().detectedHands) {
 		if (x == -1)continue;
 		int i = x;//(15-x) + 16;
-		judgeNotes << chart.getJudgeNote(0.0625 * i + 1.0, 0.0625 * (i + 1) + 1.0, song.posSec(), Settings::perfectSec, noteType::Tap);
-		judgeNotes << chart.getJudgeNote(0.0625 * i + 1.0, 0.0625 * (i + 1) + 1.0, song.posSec(), Settings::perfectSec, noteType::Trace_s);
-		judgeNotes << chart.getJudgeNote(0.0625 * i + 1.0, 0.0625 * (i + 1) + 1.0, song.posSec(), Settings::perfectSec, noteType::Trace_B);
-		judgeNotes << chart.getJudgeNote(0.0625 * i + 1.0, 0.0625 * (i + 1) + 1.0, song.posSec(), Settings::perfectSec, noteType::Swing);
+		isPressed_above_new[i] = true;
+	}
+	for (int32 i = 0; i < 16; i++) {
+		if (isPressed_above_new[i]) {
+			judgeNotes << chart.getJudgeNote(0.0625 * i + 1.0 + 0.01, 0.0625 * (i + 1) + 1.0 - 0.01, song.posSec(), Settings::perfectSec, noteType::Tap);
+			judgeNotes << chart.getJudgeNote(0.0625 * i + 1.0 + 0.01, 0.0625 * (i + 1) + 1.0 - 0.01, song.posSec(), Settings::perfectSec, noteType::Trace_s);
+			judgeNotes << chart.getJudgeNote(0.0625 * i + 1.0 + 0.01, 0.0625 * (i + 1) + 1.0 - 0.01, song.posSec(), Settings::perfectSec, noteType::Trace_B);
+			if (!getData().enableSwing) {
+				judgeNotes << chart.getJudgeNote(0.0625 * i + 1.0 + 0.01, 0.0625 * (i + 1) + 1.0 - 0.01, song.posSec(), Settings::perfectSec, noteType::Swing);
+			}
+		}
+		else if (getData().enableSwing && isPressed_above[i]) {
+			judgeNotes << chart.getJudgeNote(0.0625 * i + 1.0 + 0.01, 0.0625 * (i + 1) + 1.0 - 0.01, song.posSec(), Settings::perfectSec, noteType::Swing);
+		}
+	}
+	for (int32 i = 0; i < 16; i++) {
+		isPressed_above[i] = isPressed_above_new[i];
 	}
 	//押下されたノートを処理
 	for (Note* judgeNote : judgeNotes) {
