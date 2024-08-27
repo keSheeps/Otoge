@@ -12,3 +12,7 @@ Result.cppで結果を表示してSelector.cppに戻ります
 Player.cppの最初の部分でchart(Chart(getData().chartPath,false,getData().startPos)を実行しています ここが譜面をchart(変数)に読み込む部分 ChartクラスはChart.cppにまとまっています<br>
 処理を簡単にするために曲の情報としてBPMではなく一分当たりの小節数を持つことにしています(これがMPM) またノートの位置としてレーン上の点をを0～2の実数で2点持つことにしています(0～1:下 1～2:上)(Note.left,Note.right) 時間軸では整数部分が小節，小数部分が小節内での位置となるように実数を持っています(Note.timing)<br>
 timingは譜面データ頭のMPM変化点のリストから計算しています
+
+# 絵について #
+タイトル絵:友人の友人
+その他:Collaguru
