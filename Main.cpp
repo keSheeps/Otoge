@@ -26,6 +26,7 @@ void Main()
 	Scene::SetBackground(ColorF{ 0.5, 0.5, 0.5 });
 
 	//Assetsの登録
+	TextureAsset::Register(U"title", U"assets/title.png");
 	TextureAsset::Register(U"background", U"assets/bg.png");
 	TextureAsset::Register(U"panel", U"assets/panel.png");
 	TextureAsset::Register(U"difficulty-1", U"assets/difficulty-1.png");
@@ -52,7 +53,7 @@ void Main()
 	const INI ini{ U"config.ini" };
 	bool useDetectHands = Parse<bool>(ini[U"System.useDetectHands"]);
 	bool enableSwing = Parse<bool>(ini[U"System.enableSwing"]);
-
+	bool useSliderOnSelector = Parse<bool>(ini[U"System.useSliderOnSelector"]);
 	//シーンの登録
 	App manager;
 	manager.add<Title>(State::Title);
@@ -60,6 +61,7 @@ void Main()
 	manager.add<Player>(State::Player);
 	manager.add<Result>(State::Result);
 	manager.get()->enableSwing = enableSwing;
+	manager.get()->useSliderOnSelector = useSliderOnSelector;
 	//第1引数は.exeファイルの位置 第2引数:譜面パス(既定:選曲から開始) 第3引数:HS(既定:1) 第4引数:開始小節(既定:0)
 	const Array<String> args = System::GetCommandLineArgs();
 	if (size(args) >= 2) {

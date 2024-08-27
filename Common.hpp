@@ -40,6 +40,7 @@ struct GameData {
 	String chartPath;
 	Array<int> detectedHands;
 	bool enableSwing=false;
+	bool useSliderOnSelector = true;
 	double HS = 1;
 	int volume_per = 100;
 	double startPos = 0;

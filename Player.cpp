@@ -68,11 +68,14 @@ void Player::update() {
 			judgeNotes << chart.getJudgeNote(0.0625 * i + 1.0 + 0.01, 0.0625 * (i + 1) + 1.0 - 0.01, song.posSec(), Settings::perfectSec, noteType::Trace_s);
 			judgeNotes << chart.getJudgeNote(0.0625 * i + 1.0 + 0.01, 0.0625 * (i + 1) + 1.0 - 0.01, song.posSec(), Settings::perfectSec, noteType::Trace_B);
 			if (!getData().enableSwing) {
-				judgeNotes << chart.getJudgeNote(0.0625 * i + 1.0 + 0.01, 0.0625 * (i + 1) + 1.0 - 0.01, song.posSec(), Settings::perfectSec, noteType::Swing);
+				judgeNotes << chart.getJudgeNote(0.0625 * i + 1.0 + 0.01, 0.0625 * (i + 1) + 1.0 - 0.01, song.posSec(), Settings::goodSec, noteType::Swing);
 			}
 		}
-		else if (getData().enableSwing && isPressed_above[i]) {
-			judgeNotes << chart.getJudgeNote(0.0625 * i + 1.0 + 0.01, 0.0625 * (i + 1) + 1.0 - 0.01, song.posSec(), Settings::perfectSec, noteType::Swing);
+		else {
+			if (getData().enableSwing && isPressed_above[i]) {
+				judgeNotes << chart.getJudgeNote(0.0625 * i + 1.0 + 0.01, 0.0625 * (i + 1) + 1.0 - 0.01, song.posSec(), Settings::goodSec, noteType::Swing);
+				Print << i;
+			}
 		}
 	}
 	for (int32 i = 0; i < 16; i++) {

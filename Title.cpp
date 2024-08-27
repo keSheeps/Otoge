@@ -5,11 +5,12 @@ Title::Title(const InitData& init) : IScene{ init } {
 }
 
 void Title::update() {
-
-	if (const auto slider = Gamepad(0)) {
-		for (auto [i, button] : Indexed(slider.buttons)) {
-			if (button.down()) {
-				changeScene(State::Selector);
+	if (getData().useSliderOnSelector) {
+		if (const auto slider = Gamepad(0)) {
+			for (auto [i, button] : Indexed(slider.buttons)) {
+				if (button.down()) {
+					changeScene(State::Selector);
+				}
 			}
 		}
 	}
@@ -19,6 +20,6 @@ void Title::update() {
 }
 
 void Title::draw() const {
-	ClearPrint();
-	Print << U"Press Any Key!";
+	TextureAsset(U"title").draw(0, 0);
+	font(U"Press any key!").drawAt(30, Scene::Size().x / 2, Scene::Size().y / 8 * 6, ColorF(1, 1, 1));
 }
