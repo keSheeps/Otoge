@@ -15,4 +15,4 @@ timingは譜面データ頭のMPM変化点のリストから計算していま�
 
 # 絵について #
 タイトル絵:友人の友人
-その他:Collaguru
+その他:Collaguru( https://x.com/collaguru_ohs )
