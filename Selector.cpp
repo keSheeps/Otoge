@@ -1,6 +1,7 @@
 ﻿# include "Selector.hpp"
 
 Selector::Selector(const InitData& init) : IScene{ init } {
+	AudioAsset(U"selectbgm").play();
 }
 int cursor = 0;
 void Selector::update() {
@@ -34,6 +35,7 @@ void Selector::update() {
 		}
 		if (KeyJ.down() || pressedJ) {
 			getData().chartPath = getData().songList[getData().index].path;
+			AudioAsset(U"selectbgm").stop();
 			changeScene(State::Player);
 		}
 		if (KeyK.down() || pressedK) state = 2;

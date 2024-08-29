@@ -1,7 +1,7 @@
 ﻿# include "Title.hpp"
 
 Title::Title(const InitData& init) : IScene{ init } {
-	
+	AudioAsset(U"titlebgm").play();
 }
 
 void Title::update() {
@@ -9,12 +9,14 @@ void Title::update() {
 		if (const auto slider = Gamepad(0)) {
 			for (auto [i, button] : Indexed(slider.buttons)) {
 				if (button.down()) {
+					AudioAsset(U"titlebgm").stop();
 					changeScene(State::Selector);
 				}
 			}
 		}
 	}
 	if (Keyboard::GetAllInputs().size() > 0) {
+		AudioAsset(U"titlebgm").stop();
 		changeScene(State::Selector);
 	}
 }

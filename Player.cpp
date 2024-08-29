@@ -74,7 +74,6 @@ void Player::update() {
 		else {
 			if (getData().enableSwing && isPressed_above[i]) {
 				judgeNotes << chart.getJudgeNote(0.0625 * i + 1.0 + 0.01, 0.0625 * (i + 1) + 1.0 - 0.01, song.posSec(), Settings::goodSec, noteType::Swing);
-				Print << i;
 			}
 		}
 	}

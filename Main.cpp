@@ -27,6 +27,8 @@ void Main()
 
 	//Assetsの登録
 	TextureAsset::Register(U"title", U"assets/title.png");
+	AudioAsset::Register(U"titlebgm", U"assets/jupiter.wav");
+	AudioAsset::Register(U"selectbgm", U"assets/microcosmos.wav");
 	TextureAsset::Register(U"background", U"assets/bg.png");
 	TextureAsset::Register(U"panel", U"assets/panel.png");
 	TextureAsset::Register(U"difficulty-1", U"assets/difficulty-1.png");
